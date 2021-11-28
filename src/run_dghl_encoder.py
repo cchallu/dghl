@@ -46,10 +46,10 @@ def basic_mc(dataset, random_seed):
     mc['z_size'] = 20
     mc['z_size_up'] = 5
     mc['window_hierarchy'] = 1
-    mc['batch_size'] = 32 # 4
+    mc['batch_size'] = 128 # 32
     mc['learning_rate'] = 0.01 # 0.001
     mc['noise_std'] = 0.001
-    mc['n_iterations'] = 2000 # 1000
+    mc['n_iterations'] = 5000 # 1000
     mc['normalize_windows'] = normalize_windows
     mc['random_seed'] = random_seed
     mc['device'] = None
@@ -159,4 +159,5 @@ if __name__ == '__main__':
     
     main(args)
 
-# python src/run_dghl.py --random_seed 1 --experiment_name 'DGHL'
+# source ~/anaconda3/etc/profile.d/conda.sh
+# python src/run_dghl_encoder.py --random_seed 1 --experiment_name 'encoder_gpu'
