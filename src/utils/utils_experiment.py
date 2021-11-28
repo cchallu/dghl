@@ -314,8 +314,9 @@ def train_DGHL_encoder(mc, train_data, test_data, test_labels, train_mask, test_
             filename = f'{rootdir_entity}/anomaly_scores.png'
             plot_anomaly_scores(score=score, labels=test_labels[entity], filename=filename)
 
-        results = {'score': score, 'ts_score':ts_score, 'x_test_true':x_test_true, 'x_test_hat':x_test_hat, 'labels':test_labels,
-                    'x_train_true':x_train_true, 'x_train_hat':x_train_hat, 'train_mask': train_mask, 'mc':mc}
+        results = {'score': score, 'ts_score':ts_score, 'labels':test_labels, 'mc':mc}
+        # results = {'score': score, 'ts_score':ts_score, 'x_test_true':x_test_true, 'x_test_hat':x_test_hat, 'labels':test_labels,
+        #             'x_train_true':x_train_true, 'x_train_hat':x_train_hat, 'train_mask': train_mask, 'mc':mc}
 
         with open(f'{rootdir_entity}/results.p','wb') as f:
             pickle.dump(results, f)
