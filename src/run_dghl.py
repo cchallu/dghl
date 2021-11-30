@@ -51,11 +51,11 @@ def basic_mc(dataset, random_seed):
     mc['z_step_size'] = 0.1
     mc['z_with_noise'] = False
     mc['z_persistent'] = True
-    mc['z_iters_inference'] = 5 #500
+    mc['z_iters_inference'] = 500
     mc['batch_size'] = 4
     mc['learning_rate'] = 1e-3
     mc['noise_std'] = 0.001
-    mc['n_iterations'] = 10 #1000
+    mc['n_iterations'] = 1000
     mc['normalize_windows'] = normalize_windows
     mc['random_seed'] = random_seed
     mc['device'] = None
@@ -75,7 +75,8 @@ def run_smd(args):
         os.makedirs(name=root_dir, exist_ok=True)
 
         train_data, train_mask, test_data, test_mask, labels = load_smd(entities=machine, downsampling_size=10,
-                                                                        occlusion_intervals=1, occlusion_prob=0,
+                                                                        occlusion_intervals=args.occlusion_intervals,
+                                                                        occlusion_prob=args.occlusion_prob,
                                                                         root_dir='./data', verbose=True)
         
         train_DGHL(mc=mc, train_data=train_data, test_data=test_data, test_labels=labels,
@@ -94,7 +95,8 @@ def run_smap(args):
         os.makedirs(name=root_dir, exist_ok=True)
 
         train_data, train_mask, test_data, test_mask, labels = load_nasa(entities=[entity], downsampling_size=1,
-                                                                         occlusion_intervals=1, occlusion_prob=0,
+                                                                         occlusion_intervals=args.occlusion_intervals,
+                                                                         occlusion_prob=args.occlusion_prob,
                                                                          root_dir='./data', verbose=True)
 
         train_DGHL(mc=mc, train_data=train_data, test_data=test_data, test_labels=labels,
@@ -113,7 +115,8 @@ def run_msl(args):
         os.makedirs(name=root_dir, exist_ok=True)
 
         train_data, train_mask, test_data, test_mask, labels = load_nasa(entities=[entity], downsampling_size=1,
-                                                                         occlusion_intervals=1, occlusion_prob=0,
+                                                                         occlusion_intervals=args.occlusion_intervals,
+                                                                         occlusion_prob=args.occlusion_prob,
                                                                          root_dir='./data', verbose=True)
 
         train_DGHL(mc=mc, train_data=train_data, test_data=test_data, test_labels=labels,
@@ -125,7 +128,10 @@ def run_swat(args):
     root_dir = f'./results/{args.experiment_name}_{args.random_seed}/SWAT'
     os.makedirs(name=root_dir, exist_ok=True)
 
-    train_data, train_mask, test_data, test_mask, labels = load_swat(downsampling_size=10, root_dir='./data', verbose=True)
+    train_data, train_mask, test_data, test_mask, labels = load_swat(downsampling_size=10,
+                                                                     occlusion_intervals=args.occlusion_intervals,
+                                                                     occlusion_prob=args.occlusion_prob,
+                                                                     root_dir='./data', verbose=True)
     
     train_DGHL(mc=mc, train_data=train_data, test_data=test_data, test_labels=labels,
                train_mask=train_mask, test_mask=test_mask, entities=['SWAT'], make_plots=True, root_dir=root_dir)
@@ -155,6 +161,8 @@ def parse_args():
     desc = "Run DGHL in benchmark datasets"
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('--random_seed', type=int, required=True)
+    parser.add_argument('--occlusion_intervals', type=int, required=True)
+    parser.add_argument('--occlusion_prob', type=float, required=True)
     parser.add_argument('--experiment_name', type=str, required=True)
     return parser.parse_args()
 
@@ -165,4 +173,4 @@ if __name__ == '__main__':
     
     main(args)
 
-# python src/run_dghl.py --random_seed 1 --experiment_name 'DGHL'
+# python src/run_dghl.py --random_seed 1 --occlusion_intervals 5 --occlusion_prob 0.5 --experiment_name 'DGHL'

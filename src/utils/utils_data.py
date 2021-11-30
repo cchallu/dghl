@@ -198,7 +198,7 @@ def load_nasa(entities, downsampling_size, occlusion_intervals, occlusion_prob, 
     return train_data_list, train_mask_list, test_data_list, test_mask_list, test_labels_list
     
 
-def load_swat(downsampling_size, root_dir='./data', verbose=True):
+def load_swat(downsampling_size, occlusion_intervals, occlusion_prob, root_dir='./data', verbose=True):
 
     train_data = pd.read_csv(f'{root_dir}/SWAT/swat_train.csv').values
     train_data = train_data[:, None, :]
@@ -238,8 +238,29 @@ def load_swat(downsampling_size, root_dir='./data', verbose=True):
     train_data = train_data/train_max
     test_data = test_data/train_max
 
-    train_mask = np.ones(train_data.shape)
+    # ------------------------------------------------- Training Occlusion Mask -------------------------------------------------
+    # Masks
+    mask_filename = f'{root_dir}/SWAT/mask_{occlusion_intervals}_{occlusion_prob}.p'
+    if os.path.exists(mask_filename):
+        if verbose:
+            print(f'Train mask {mask_filename} loaded!')
+        train_mask = pickle.load(open(mask_filename,'rb'))
+    else:
+        print('Train mask not found, creating new one')
+        train_mask = get_random_occlusion_mask(dataset=train_data, n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+        with open(mask_filename,'wb') as f:
+            pickle.dump(train_mask, f)
+        if verbose:
+            print(f'Train mask {mask_filename} created!')
+
     test_mask = np.ones(test_data.shape)
+
+    if verbose:
+            print('Train Data shape: ', train_data.shape)
+            print('Test Data shape: ', test_data.shape)
+
+            print('Train Mask mean: ', train_mask.mean())
+            print('Test Mask mean: ', test_mask.mean())
 
     train_data = [train_data]
     train_mask = [train_mask]
