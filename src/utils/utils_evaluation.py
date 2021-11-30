@@ -47,7 +47,7 @@ def smd_load_scores(scores_dir, data_dir, machines):
         
     return scores_list, labels_list 
 
-def smd_compute_f1(scores_dir, data_dir):
+def smd_compute_f1(scores_dir, n_splits, data_dir):
 
     scores, labels = smd_load_scores(scores_dir=scores_dir, data_dir=data_dir, machines=MACHINES)
 
@@ -56,7 +56,7 @@ def smd_compute_f1(scores_dir, data_dir):
     scores_normalized = np.hstack(scores_normalized)
     labels = np.hstack(labels)
 
-    f1, precision, recall, *_ = best_f1_linspace(scores=scores_normalized, labels=labels, n_splits=1000, segment_adjust=True) #1000
+    f1, precision, recall, *_ = best_f1_linspace(scores=scores_normalized, labels=labels, n_splits=n_splits, segment_adjust=True) #1000
 
     return f1, precision, recall
 
@@ -152,7 +152,7 @@ def nasa_load_scores(dataset, scores_dir, data_dir):
 
     return scores_list, labels_list
 
-def nasa_compute_f1(dataset, scores_dir, data_dir):
+def nasa_compute_f1(dataset, scores_dir, n_splits, data_dir):
 
     scores, labels = nasa_load_scores(dataset=dataset, scores_dir=scores_dir, data_dir=data_dir)
 
@@ -171,7 +171,7 @@ def nasa_compute_f1(dataset, scores_dir, data_dir):
         precision = None
         recall = None
     else:
-        f1, precision, recall, *_ = best_f1_linspace(scores=scores_normalized, labels=labels, n_splits=1000, segment_adjust=True)
+        f1, precision, recall, *_ = best_f1_linspace(scores=scores_normalized, labels=labels, n_splits=n_splits, segment_adjust=True)
 
     return f1, precision, recall
 
@@ -229,7 +229,7 @@ def nasa_nn(dataset, data_dir):
     return f1, precision, recall
 
 # ------------------------------------------------------- SWAT -------------------------------------------------------
-def swat_compute_f1(results_dir):
+def swat_compute_f1(n_splits, results_dir):
 
     results_file = f'{results_dir}/SWAT/results.p'
     results = pickle.load(open(results_file,'rb'))
@@ -255,7 +255,7 @@ def swat_compute_f1(results_dir):
     scores_new[10,:] = 0
     scores_new = scores_new.mean(axis=0)
 
-    f1, precision, recall, *_ = best_f1_linspace(scores=scores_new, labels=labels, n_splits=1000, segment_adjust=False)
+    f1, precision, recall, *_ = best_f1_linspace(scores=scores_new, labels=labels, n_splits=n_splits, segment_adjust=False)
 
     return f1, precision, recall
 
