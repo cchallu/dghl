@@ -20,7 +20,7 @@ def main(args):
     print(10*'-', 'SMAP', 10*'-')
     smap_scores = []
     for i in range(1, 5):
-        experiment = f'{args.experiment_name}{i}'
+        experiment = f'{args.experiment_name}_{i}'
         f1, _, _ = nasa_compute_f1(dataset='SMAP', scores_dir=f'./results/{experiment}', n_splits=100, data_dir='./data')
         print(f1)
         smap_scores.append(f1)
@@ -32,7 +32,7 @@ def main(args):
     print(10*'-', 'MSL', 10*'-')
     msl_scores = []
     for i in range(1, 5):
-        experiment = f'DGHL_{i}'
+        experiment = f'{args.experiment_name}_{i}'
         f1, _, _ = nasa_compute_f1(dataset='MSL', scores_dir=f'./results/{experiment}', n_splits=100, data_dir='./data')
         print(f1)
         msl_scores.append(f1)
