@@ -165,13 +165,12 @@ def nasa_load_scores(dataset, scores_dir, data_dir):
         if np.sum(np.isnan(score)) > 0:
             print('entity', entity)
             print('nans', np.mean(np.isnan(score)))
-            score = score[~np.isnan(score)]
-            labels = labels[~np.isnan(score)]
-        
-        assert score.shape == labels.shape, 'Wrong dimensions'
-        
-        labels_list.append(labels)
-        scores_list.append(score)
+            # score = score[~np.isnan(score)]
+            # labels = labels[~np.isnan(score)]
+        else:
+            assert score.shape == labels.shape, 'Wrong dimensions'
+            labels_list.append(labels)
+            scores_list.append(score)
 
     return scores_list, labels_list
 
