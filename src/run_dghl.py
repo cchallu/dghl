@@ -37,7 +37,7 @@ def basic_mc(dataset, random_seed):
         normalize_windows = False     
 
     mc = {}
-    mc['window_size'] = 64
+    mc['window_size'] = 64*4 # 64
     mc['window_step'] = 64*4
     mc['n_features'] = n_features
     mc['hidden_multiplier'] = 32
@@ -45,7 +45,7 @@ def basic_mc(dataset, random_seed):
     mc['kernel_multiplier'] = 1
     mc['z_size'] = 20
     mc['z_size_up'] = 5
-    mc['window_hierarchy'] = 4
+    mc['window_hierarchy'] = 1 #4
     mc['z_iters'] = 25
     mc['z_sigma'] = 0.25
     mc['z_step_size'] = 0.1
@@ -173,4 +173,5 @@ if __name__ == '__main__':
     
     main(args)
 
-# python src/run_dghl.py --random_seed 1 --occlusion_intervals 5 --occlusion_prob 0.5 --experiment_name 'DGHL'
+# source ~/anaconda3/etc/profile.d/conda.sh
+# CUDA_VISIBLE_DEVICES=2 python src/run_dghl.py --random_seed 1 --occlusion_intervals 1 --occlusion_prob 0 --experiment_name 'DGHL'
