@@ -14,6 +14,7 @@ Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
   limitations under the License.
 """
 
+import os
 import pickle
 import glob
 
@@ -23,6 +24,7 @@ import pandas as pd
 from sklearn.neighbors import NearestNeighbors
 
 from utils.utils import f1_score, best_f1_linspace, normalize_scores
+from utils.utils_data import get_random_occlusion_mask
 
 MACHINES = ['machine-1-1','machine-1-2','machine-1-3','machine-1-4','machine-1-5','machine-1-6','machine-1-7','machine-1-8',
             'machine-2-1', 'machine-2-2','machine-2-3','machine-2-4','machine-2-5','machine-2-6','machine-2-7','machine-2-8','machine-2-9', 
@@ -60,14 +62,21 @@ def smd_compute_f1(scores_dir, n_splits, data_dir):
 
     return f1, precision, recall
 
-def smd_one_liner(data_dir):
+def smd_one_liner(occlusion_intervals, occlusion_prob, data_dir):
     labels_list = []
     scores_list = []
     for machine in MACHINES:
         train_data = np.loadtxt(f'{data_dir}/ServerMachineDataset/train/{machine}.txt',delimiter=',')
         test_data = np.loadtxt(f'{data_dir}/ServerMachineDataset/test/{machine}.txt',delimiter=',')
 
-        train_means = train_data.mean(axis=0, keepdims=True)
+        # Mask
+        np.random.seed(1)
+        train_mask = get_random_occlusion_mask(dataset=train_data[:,None,:], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+        train_mask = train_mask[:,0,:]
+        
+        train_means = np.average(train_data, axis=0, weights=train_mask)
+        train_means = train_means[None, :]
+
         scores = np.abs(test_data - train_means)
         scores = scores.mean(axis=1)
 
@@ -84,7 +93,7 @@ def smd_one_liner(data_dir):
         
     return f1, precision, recall
 
-def smd_nn(data_dir):
+def smd_nn(occlusion_intervals, occlusion_prob, data_dir):
     downsampling_size = 10
     labels_list = []
     scores_list = []
@@ -108,6 +117,13 @@ def smd_nn(data_dir):
 
         train_data = dataset[:-len_test_downsampled, 0, :]
         test_data = dataset[-len_test_downsampled:, 0, :]
+
+        # Mask
+        np.random.seed(1)
+        train_mask = get_random_occlusion_mask(dataset=train_data[:, None, :], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+        train_mask = train_mask[:, 0, :]
+
+        train_data = train_data*train_mask
 
         nbrs = NearestNeighbors(n_neighbors=10, algorithm='ball_tree').fit(train_data)
         distances, _ = nbrs.kneighbors(test_data)
@@ -141,9 +157,16 @@ def nasa_load_scores(dataset, scores_dir, data_dir):
         ts_scores = results['ts_score']
         labels = np.load(f'{data_dir}/NASA/labels/{entity}.npy')
         ts_scores = np.swapaxes(ts_scores,0,1)
-        ts_scores = ts_scores.reshape(len(ts_scores),-1)
+        ts_scores = ts_scores.reshape(len(ts_scores), -1)
         ts_scores = ts_scores[:, -len(labels):]
         score = ts_scores[0]
+
+        # NaN protection (to remove)
+        if np.sum(np.isnan(score)) > 0:
+            print('entity', entity)
+            print('nans', np.mean(np.isnan(score)))
+            score = score[~np.isnan(score)]
+            labels = labels[~np.isnan(score)]
         
         assert score.shape == labels.shape, 'Wrong dimensions'
         
@@ -175,7 +198,7 @@ def nasa_compute_f1(dataset, scores_dir, n_splits, data_dir):
 
     return f1, precision, recall
 
-def nasa_one_liner(dataset, data_dir):
+def nasa_one_liner(dataset, occlusion_intervals, occlusion_prob, data_dir):
     meta_data = pd.read_csv(f'{data_dir}/NASA/labeled_anomalies.csv')
     entities = meta_data[meta_data['spacecraft']==dataset]['chan_id'].values
 
@@ -186,7 +209,14 @@ def nasa_one_liner(dataset, data_dir):
         test_data = np.load(f'{data_dir}/NASA/test/{entity}.npy')
         labels = np.load(f'{data_dir}/NASA/labels/{entity}.npy')
 
-        train_means = train_data.mean(axis=0, keepdims=True)
+        # Mask
+        np.random.seed(1)
+        train_mask = get_random_occlusion_mask(dataset=train_data[:,None,:], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+        train_mask = train_mask[:,0,:]
+        
+        train_means = np.average(train_data, axis=0, weights=train_mask)
+        train_means = train_means[None, :]
+
         scores = np.abs(test_data - train_means)[:,0]
 
         labels_list.append(labels)
@@ -201,7 +231,7 @@ def nasa_one_liner(dataset, data_dir):
         
     return f1, precision, recall
 
-def nasa_nn(dataset, data_dir):
+def nasa_nn(dataset, occlusion_intervals, occlusion_prob, data_dir):
     meta_data = pd.read_csv(f'{data_dir}/NASA/labeled_anomalies.csv')
     entities = meta_data[meta_data['spacecraft']==dataset]['chan_id'].values
 
@@ -211,6 +241,13 @@ def nasa_nn(dataset, data_dir):
         train_data = np.load(f'{data_dir}/NASA/train/{entity}.npy')        
         test_data = np.load(f'{data_dir}/NASA/test/{entity}.npy')
         labels = np.load(f'{data_dir}/NASA/labels/{entity}.npy')
+
+        # Mask
+        np.random.seed(1)
+        train_mask = get_random_occlusion_mask(dataset=train_data[:, None, :], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+        train_mask = train_mask[:, 0, :]
+
+        train_data = train_data*train_mask
 
         nbrs = NearestNeighbors(n_neighbors=10, algorithm='ball_tree').fit(train_data)
         distances, _ = nbrs.kneighbors(test_data)
@@ -259,13 +296,21 @@ def swat_compute_f1(n_splits, results_dir):
 
     return f1, precision, recall
 
-def swat_one_liner(data_dir):
+def swat_one_liner(occlusion_intervals, occlusion_prob, data_dir):
     train_data = pd.read_csv(f'{data_dir}/SWAT/swat_train.csv').values
     test_data = pd.read_csv(f'{data_dir}/SWAT/swat_test.csv').values
     labels = pd.read_csv(f'{data_dir}/SWAT/labels_test.csv').values
     len_test = len(test_data)
 
-    train_means = train_data.mean(axis=0, keepdims=True)
+    # Mask
+    np.random.seed(1)
+    train_mask = get_random_occlusion_mask(dataset=train_data[:,None,:], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+    train_mask = train_mask[:,0,:]
+    
+    train_data = train_data*train_mask
+        
+    train_means = np.average(train_data, axis=0, weights=train_mask)
+    train_means = train_means[None, :]
 
     train_errors = np.square(train_data-train_means)
     train_errors = train_errors.mean(axis=0)
@@ -282,7 +327,7 @@ def swat_one_liner(data_dir):
 
     return f1, precision, recall
 
-def swat_nn(data_dir):
+def swat_nn(occlusion_intervals, occlusion_prob, data_dir):
     downsampling_size = 10
     
     train_data = pd.read_csv(f'{data_dir}/SWAT/swat_train.csv').values
@@ -305,6 +350,12 @@ def swat_nn(data_dir):
 
     train_data = dataset[:-len_test_downsampled, 0, :]
     test_data = dataset[-len_test_downsampled:, 0, :]
+
+    # Mask
+    np.random.seed(1)
+    train_mask = get_random_occlusion_mask(dataset=train_data[:, None, :], n_intervals=occlusion_intervals, occlusion_prob=occlusion_prob)
+    train_mask = train_mask[:, 0, :]
+    train_data = train_data*train_mask
 
     train_max = train_data.max(axis=0, keepdims=True)
     train_data = train_data/train_max
